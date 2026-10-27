@@ -33,9 +33,14 @@ function readShare(input: string | undefined, max: number): number {
     : 0
 }
 
+/**
+ * `expenseId` is the id the expense will be saved with, so the extra paise are
+ * shown on the same people they will be saved on.
+ */
 export function previewSplit(
   values: ExpenseFormValues,
   members: Member[],
+  expenseId = '',
 ): SplitPreview {
   const amount = readAmount(values.amount)
 
@@ -46,7 +51,7 @@ export function previewSplit(
       if (amount === undefined || ids.length === 0) {
         return { type: 'equal', rows: [], total: 0 }
       }
-      const shares = splitEqually(amount, ids)
+      const shares = splitEqually(amount, ids, expenseId)
       return {
         type: 'equal',
         rows: ids.map((memberId) => ({ memberId, amount: shares[memberId] ?? 0 })),
@@ -77,7 +82,16 @@ export function previewSplit(
       if (amount !== undefined) {
         // At exactly 100% use the same rule as saving, so what is shown is
         // what is stored. Before that, show plain rounded-down amounts.
-        const exact = assigned === FULL_PERCENT ? splitByPercent(amount, entries) : undefined
+        // Saving leaves out members at 0%, and who gets the extra paisa depends
+        // on how many members take part, so leave them out here too.
+        const exact =
+          assigned === FULL_PERCENT
+            ? splitByPercent(
+                amount,
+                entries.filter(([, bp]) => bp > 0),
+                expenseId,
+              )
+            : undefined
         rows = entries.map(([memberId, bp]) => ({
           memberId,
           amount: exact?.[memberId] ?? Math.floor((amount * bp) / FULL_PERCENT),

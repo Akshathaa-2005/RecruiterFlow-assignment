@@ -25,7 +25,7 @@ describe('memberTotals', () => {
     expect(totals.find((t) => t.memberId === 'm1')).toEqual({
       memberId: 'm1',
       paid: 2_549_999,
-      share: 694_579,
+      share: 694_578,
     })
     expect(totals.find((t) => t.memberId === 'm4')).toEqual({
       memberId: 'm4',

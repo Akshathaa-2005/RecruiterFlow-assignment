@@ -1,4 +1,5 @@
 import { createSlice, nanoid, type PayloadAction } from '@reduxjs/toolkit'
+import { countExpensesInvolving } from '../logic/members'
 import type { Expense, Member, NewExpense, TripData } from '../types'
 
 // Real state is always supplied by makeStore; this is only a typed placeholder.
@@ -12,8 +13,8 @@ const tripSlice = createSlice({
       reducer(state, action: PayloadAction<Expense>) {
         state.expenses.push(action.payload)
       },
-      prepare(expense: NewExpense) {
-        return { payload: { ...expense, id: nanoid() } }
+      prepare(expense: NewExpense, id: string = nanoid()) {
+        return { payload: { ...expense, id } }
       },
     },
     memberAdded(state, action: PayloadAction<Member>) {
@@ -21,11 +22,7 @@ const tripSlice = createSlice({
     },
     memberRemoved(state, action: PayloadAction<Member>) {
       const id = action.payload.id
-      const inUse = state.expenses.some(
-        (e) =>
-          e.paidBy === id ||
-          (e.split.type === 'equal' ? e.split.memberIds.includes(id) : id in e.split.shares),
-      )
+      const inUse = countExpensesInvolving(id, state.expenses) > 0
       // Removing someone who is in an expense would corrupt it, and the trip
       // always keeps at least one member.
       if (inUse || state.members.length <= 1) return

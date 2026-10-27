@@ -26,7 +26,7 @@ npm run build      # typecheck, then a production build in dist/
 
 ## Rules I chose
 
-- **Extra paise:** leftover paise go one each to the first members in trip-member order (the order in the member list, not click order). ₹100 / 3 = 33.34 + 33.33 + 33.33. Percentage splits use the largest-remainder method with ties broken by the same order. Both live in `src/logic/split.ts` and are used for balances, so the rule is identical everywhere.
+- **Extra paise:** ₹100 / 3 = 33.34 + 33.33 + 33.33, so one person pays an extra paisa. Who it is is *not* always the first member: the leftover paise go one each to consecutive members (in member-list order, wrapping around) starting from a position worked out from the expense's **id**. The id is random and made once, when the expense is created, then never changes. That gives a random-looking spread across expenses, but the same answer every time for the same expense. Re-rolling on every render would be wrong, because balances are recomputed from the saved expenses each time and the form preview has to match what gets saved. For that reason the Add page picks the id when it opens, and the preview and the saved expense use the same one. Editing the description, date or payer never moves the extra paisa; changing the amount or who is in the split can, because the leftover itself changes. Percentage splits use the largest-remainder method with ties broken from the same starting position. All of it lives in `src/logic/split.ts` and is shared by the preview, saving and balances.
 - **Money is integer paise** everywhere. Input is parsed from the string (`parseDecimal`), never through `parseFloat`, so `0.29` is exactly 29 paise. Percentages are handled as integer basis points.
 - **Limits:** an amount can be at most ₹10,00,000.00 with 2 decimals, a description 60 characters, a member name 30 characters. Each limit is shown as a hint under its input, so nobody finds out by hitting it.
 - Blank exact/percent inputs count as 0; members with 0 are left out of the saved split.
@@ -53,7 +53,7 @@ src/
 
 ## Tests
 
-`npm test` runs 108 tests: the split and balance logic (including ₹100 split equally between 3), settle-up, validation, edit round-tripping, the expense form (errors for invalid input, saving valid input, errors on blur) and the pages (adding, editing, deleting, adding and removing members, settle-up).
+`npm test` runs 116 tests: the split and balance logic (including ₹100 split equally between 3), settle-up, validation, edit round-tripping, the expense form (errors for invalid input, saving valid input, errors on blur) and the pages (adding, editing, deleting, adding and removing members, settle-up).
 
 ## With another day
 

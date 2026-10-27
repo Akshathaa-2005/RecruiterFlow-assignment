@@ -50,8 +50,8 @@ describe('navigation', () => {
 describe('Expenses page', () => {
   it('shows balances and the table, newest date first', () => {
     renderApp()
-    expect(balanceOf('Aarav')).toBe('Aaravgets back ₹18,554.20')
-    expect(balanceOf('Diya')).toBe('Diyaowes ₹3,695.78')
+    expect(balanceOf('Aarav')).toBe('Aaravgets back ₹18,554.21')
+    expect(balanceOf('Diya')).toBe('Diyaowes ₹3,695.79')
 
     const [, first, , , , , last] = screen.getAllByRole('row')
     if (!first || !last) throw new Error('expected 6 expense rows')
@@ -94,8 +94,8 @@ describe('Expenses page', () => {
 
     expect(screen.queryByText('Villa booking')).not.toBeInTheDocument()
     expect(screen.getByRole('status')).toHaveTextContent('Expense was deleted.')
-    // Aarav paid the villa: 18,554.20 - (24,000 - 4,800 share) = -645.80
-    expect(balanceOf('Aarav')).toBe('Aaravowes ₹645.80')
+    // Aarav paid the villa: 18,554.21 - (24,000 - 4,800 share) = -645.79
+    expect(balanceOf('Aarav')).toBe('Aaravowes ₹645.79')
   })
 
   it('shows an empty state when there are no expenses', async () => {
@@ -206,8 +206,9 @@ describe('adding an expense', () => {
     expect(screen.getByRole('status')).toHaveTextContent('was added')
     expect(screen.getByText('Beach chairs')).toBeInTheDocument()
     expect(store.getState().trip.expenses).toHaveLength(7)
-    // ₹100 between 3: Aarav pays 100, owes 33.34 -> +66.66 on top of 18,554.20
-    expect(balanceOf('Aarav')).toBe('Aaravgets back ₹18,620.86')
+    // ₹100 between 3: Aarav pays 100 and owes 33.33 or 33.34 (who gets the extra
+    // paisa depends on the expense, including today's date), on top of 18,554.21
+    expect(balanceOf('Aarav')).toMatch(/^Aaravgets back ₹18,620\.8[78]$/)
   })
 
   it('keeps what was typed when you visit another page and come back', async () => {
@@ -268,7 +269,7 @@ describe('Insights charts', () => {
     const aarav = within(card).getByText('Aarav').closest('li')
     if (!aarav) throw new Error('row not found')
     expect(aarav).toHaveTextContent('Paid: ₹25,499.99')
-    expect(aarav).toHaveTextContent('Share: ₹6,945.79')
+    expect(aarav).toHaveTextContent('Share: ₹6,945.78')
   })
 
   it('shows spending per month', () => {

@@ -21,6 +21,8 @@ interface ExpenseFormProps {
   onValuesChange?: ((values: ExpenseFormValues) => void) | undefined
   /** Saves a new member and returns it, so the form can select them. */
   onAddMember: (name: string) => Member
+  /** The id this expense is saved with; it decides who pays the extra paisa */
+  expenseId: string
   /** Label of the submit button; "Save" when omitted */
   submitLabel?: string | undefined
   onSubmit: (expense: NewExpense) => void
@@ -58,6 +60,7 @@ export function ExpenseForm({
   initialValues,
   onValuesChange,
   onAddMember,
+  expenseId,
   submitLabel = 'Save',
   onSubmit,
   onCancel,
@@ -79,7 +82,7 @@ export function ExpenseForm({
     : visibleErrors(result.errors, (key) => attempts > 0 || touched.has(key))
 
   // Live breakdown, shown from the first keystroke.
-  const preview = previewSplit(values, members)
+  const preview = previewSplit(values, members, expenseId)
   const status = describeSplitStatus(preview)
   const names = new Map(members.map((m) => [m.id, m.name]))
 

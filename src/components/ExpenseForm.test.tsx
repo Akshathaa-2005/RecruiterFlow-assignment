@@ -15,6 +15,7 @@ function setup() {
       members={sampleData.members}
       today={today}
       onAddMember={(name) => ({ id: 'new', name })}
+      expenseId="test-expense"
       onSubmit={onSubmit}
       onCancel={onCancel}
     />,
@@ -38,7 +39,9 @@ describe('ExpenseForm', () => {
     expect(screen.getByLabelText('Amount (₹)')).toHaveAccessibleDescription(
       'Amount must be more than ₹0',
     )
-    expect(screen.getByLabelText('Paid by')).toHaveAccessibleDescription('Select who paid')
+    expect(screen.getByLabelText('Paid by')).toHaveAccessibleDescription(
+      'Select who paid',
+    )
     expect(screen.getByLabelText('Category')).toHaveAccessibleDescription(
       'Select a category',
     )
@@ -48,7 +51,7 @@ describe('ExpenseForm', () => {
     expect(description).toHaveFocus()
   })
 
-  it('shows a field\'s error as soon as you leave it, and only that field\'s', async () => {
+  it("shows a field's error as soon as you leave it, and only that field's", async () => {
     const { user } = setup()
 
     await user.click(screen.getByLabelText('Description'))
@@ -170,7 +173,7 @@ describe('ExpenseForm', () => {
   })
 
   describe('live breakdown', () => {
-    it('shows each equal share, with the extra paisa going to the first member', async () => {
+    it('shows each equal share, with the extra paisa going to one of them', async () => {
       const { user } = setup()
       await user.click(screen.getByRole('checkbox', { name: 'Meera' }))
       await user.click(screen.getByRole('checkbox', { name: 'Rohan' }))
@@ -179,8 +182,16 @@ describe('ExpenseForm', () => {
       await user.type(screen.getByLabelText('Amount (₹)'), '100')
 
       const list = screen.getByRole('list', { name: "Each person's share" })
-      const rows = within(list).getAllByRole('listitem').map((li) => li.textContent)
-      expect(rows).toEqual(['Aarav₹33.34', 'Diya₹33.33', 'Kabir₹33.33', 'Total₹100.00'])
+      const rows = within(list)
+        .getAllByRole('listitem')
+        .map((li) => li.textContent)
+      expect(
+        rows
+          .slice(0, 3)
+          .map((row) => row.slice(-6))
+          .sort(),
+      ).toEqual(['₹33.33', '₹33.33', '₹33.34'])
+      expect(rows[3]).toBe('Total₹100.00')
     })
 
     it('updates when members are deselected', async () => {
@@ -191,11 +202,11 @@ describe('ExpenseForm', () => {
       await user.click(screen.getByRole('checkbox', { name: 'Kabir' }))
 
       const list = screen.getByRole('list', { name: "Each person's share" })
-      expect(within(list).getAllByRole('listitem').map((li) => li.textContent)).toEqual([
-        'Aarav₹45.00',
-        'Diya₹45.00',
-        'Total₹90.00',
-      ])
+      expect(
+        within(list)
+          .getAllByRole('listitem')
+          .map((li) => li.textContent),
+      ).toEqual(['Aarav₹45.00', 'Diya₹45.00', 'Total₹90.00'])
     })
 
     it('shows rupees under each percentage and a running total', async () => {

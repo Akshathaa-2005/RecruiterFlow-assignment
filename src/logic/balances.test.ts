@@ -41,9 +41,13 @@ describe('computeBalances', () => {
 
   it('handles ₹100 split between 3 without losing a paisa', () => {
     const balances = computeBalances(members, [expense({ amount: 10_000 })])
-    expect(amountOf(balances, 'a')).toBe(6666)
-    expect(amountOf(balances, 'b')).toBe(-3333)
-    expect(amountOf(balances, 'c')).toBe(-3333)
+    // a paid 10,000 and owes their own share; b and c just owe theirs
+    const shares = [
+      10_000 - (amountOf(balances, 'a') ?? 0),
+      -(amountOf(balances, 'b') ?? 0),
+      -(amountOf(balances, 'c') ?? 0),
+    ]
+    expect(shares.sort()).toEqual([3333, 3333, 3334])
     expect(balances.reduce((sum, b) => sum + b.amount, 0)).toBe(0)
   })
 
@@ -63,8 +67,8 @@ describe('computeBalances', () => {
   it('matches hand-worked balances for the sample trip and sums to zero', () => {
     const balances = computeBalances(sampleData.members, sampleData.expenses)
     expect(balances.map((b) => [b.memberId, b.amount])).toEqual([
-      ['m1', 1_855_420],
-      ['m2', -369_578],
+      ['m1', 1_855_421],
+      ['m2', -369_579],
       ['m3', 55_408],
       ['m4', -811_250],
       ['m5', -730_000],
@@ -92,7 +96,10 @@ describe('sortExpenses', () => {
   })
 
   it('does not change the input', () => {
-    const list = [expense({ id: '1', date: '2026-01-01' }), expense({ id: '2', date: '2026-02-01' })]
+    const list = [
+      expense({ id: '1', date: '2026-01-01' }),
+      expense({ id: '2', date: '2026-02-01' }),
+    ]
     sortExpenses(list)
     expect(list.map((e) => e.id)).toEqual(['1', '2'])
   })

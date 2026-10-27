@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { describeSplit, computeShares, splitByPercent, splitEqually } from './split'
-import type { Member } from '../types'
+import type { Expense, Member } from '../types'
 
 const members: Member[] = [
   { id: 'a', name: 'A' },
@@ -73,10 +73,16 @@ describe('splitByPercent', () => {
   })
 })
 
+const when = { id: 'expense-1' }
+
 describe('computeShares', () => {
   it('does not depend on the order of keys in saved data', () => {
     const shares = computeShares(
-      { amount: 200_000, split: { type: 'percent', shares: { c: 50, a: 25, b: 25 } } },
+      {
+        ...when,
+        amount: 200_000,
+        split: { type: 'percent', shares: { c: 50, a: 25, b: 25 } },
+      },
       members,
     )
     expect(shares).toEqual({ a: 50_000, b: 50_000, c: 100_000 })
@@ -84,7 +90,7 @@ describe('computeShares', () => {
 
   it('splits equally between the selected members only', () => {
     const shares = computeShares(
-      { amount: 10_000, split: { type: 'equal', memberIds: ['c', 'a'] } },
+      { ...when, amount: 10_000, split: { type: 'equal', memberIds: ['c', 'a'] } },
       members,
     )
     expect(shares).toEqual({ a: 5000, c: 5000 })
@@ -102,5 +108,83 @@ describe('describeSplit', () => {
     expect(describeSplit({ type: 'percent', shares: { a: 100 } })).toBe(
       'Percentages, 1 person',
     )
+  })
+})
+
+describe('who gets the leftover paise', () => {
+  const ids = ['a', 'b', 'c', 'd', 'e']
+
+  it('is the same every time for the same expense id', () => {
+    expect(splitEqually(10_001, ids, 'expense-1')).toEqual(
+      splitEqually(10_001, ids, 'expense-1'),
+    )
+  })
+
+  it('starts at different people for different expense ids, never changing the total', () => {
+    const extras = new Set<string>()
+    for (let i = 0; i < 30; i++) {
+      const amount = 10_001 + i * 5
+      const shares = splitEqually(amount, ids, `expense-${i}`)
+      expect(total(shares)).toBe(amount)
+      const biggest = Math.max(...Object.values(shares))
+      for (const [id, share] of Object.entries(shares)) {
+        if (share === biggest) extras.add(id)
+      }
+    }
+    // Across 30 expenses the extra paisa is not always the first member's.
+    expect(extras.size).toBeGreaterThan(1)
+  })
+
+  it('gives each member at most one extra paisa, in a run that wraps around', () => {
+    for (let i = 0; i < 20; i++) {
+      const shares = splitEqually(10_002, ids, `seed-${i}`)
+      const values = Object.values(shares)
+      expect(Math.max(...values) - Math.min(...values)).toBeLessThanOrEqual(1)
+      expect(total(shares)).toBe(10_002)
+    }
+  })
+
+  it('breaks percentage ties from the seeded position too, still summing exactly', () => {
+    for (let i = 0; i < 20; i++) {
+      const shares = splitByPercent(
+        10_000,
+        [
+          ['a', 3333],
+          ['b', 3333],
+          ['c', 3334],
+        ],
+        `seed-${i}`,
+      )
+      expect(total(shares)).toBe(10_000)
+    }
+  })
+})
+
+describe('extra paise follow the expense id', () => {
+  const base: Expense = {
+    id: 'expense-42',
+    description: 'Beach chairs',
+    amount: 10_000,
+    paidBy: 'a',
+    date: '2026-03-14',
+    category: 'Other',
+    split: { type: 'equal', memberIds: ['a', 'b', 'c'] },
+  }
+
+  it('does not move when the description or date is edited', () => {
+    const before = computeShares(base, members)
+    const edited: Expense = { ...base, description: 'Chairs', date: '2026-03-15' }
+    expect(computeShares(edited, members)).toEqual(before)
+  })
+
+  it('gives different ids different people over many expenses', () => {
+    const winners = new Set<string>()
+    for (let i = 0; i < 30; i++) {
+      const shares = computeShares({ ...base, id: `id-${i}` }, members)
+      for (const [id, share] of Object.entries(shares)) {
+        if (share === 3334) winners.add(id)
+      }
+    }
+    expect(winners.size).toBe(3)
   })
 })

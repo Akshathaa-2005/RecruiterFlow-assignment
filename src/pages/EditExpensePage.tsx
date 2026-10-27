@@ -1,11 +1,11 @@
-import { nanoid } from '@reduxjs/toolkit'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ExpenseForm } from '../components/ExpenseForm'
 import { todayISO } from '../logic/date'
 import { expenseToFormValues } from '../logic/edit'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
-import { expenseUpdated, memberAdded } from '../store/tripSlice'
-import type { Member, NewExpense } from '../types'
+import { expenseUpdated } from '../store/tripSlice'
+import { useAddMember } from '../store/useAddMember'
+import type { NewExpense } from '../types'
 
 export function EditExpensePage() {
   const { id } = useParams()
@@ -13,6 +13,7 @@ export function EditExpensePage() {
   const expense = useAppSelector((state) => state.trip.expenses.find((e) => e.id === id))
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
+  const handleAddMember = useAddMember()
 
   if (!expense) {
     return (
@@ -24,12 +25,6 @@ export function EditExpensePage() {
         </Link>
       </section>
     )
-  }
-
-  function handleAddMember(name: string): Member {
-    const member = { id: nanoid(), name }
-    dispatch(memberAdded(member))
-    return member
   }
 
   function handleSubmit(changes: NewExpense) {
@@ -52,6 +47,7 @@ export function EditExpensePage() {
         today={todayISO()}
         initialValues={expenseToFormValues(expense)}
         onAddMember={handleAddMember}
+        expenseId={expense.id}
         submitLabel="Save changes"
         onSubmit={handleSubmit}
         onCancel={() => {

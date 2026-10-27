@@ -6,20 +6,40 @@ export const FULL_PERCENT = 10_000
 export type Shares = Record<string, number>
 
 /**
- * Splits `amount` paise between `memberIds` as evenly as possible.
- * Rule used everywhere: the leftover paise go one each to the first members
- * in the order given (callers pass trip-member order), so ₹100 between 3 is
- * 33.34 + 33.33 + 33.33.
+ * Where in the member list the leftover paise start, worked out from the
+ * expense's id (`seed`). Ids are random but never change, so the same expense
+ * always splits the same way (balances are recomputed on every render and the
+ * form preview must match what gets saved), while different expenses start at
+ * different people, so nobody is always the one who pays the extra paisa.
+ * No seed means no rotation: the first member in trip order.
  */
-export function splitEqually(amount: number, memberIds: string[]): Shares {
+function startOffset(seed: string, count: number): number {
+  if (seed === '' || count === 0) return 0
+  let hash = 2_166_136_261 // FNV-1a
+  for (let i = 0; i < seed.length; i++) {
+    hash = Math.imul(hash ^ seed.charCodeAt(i), 16_777_619) >>> 0
+  }
+  return hash % count
+}
+
+/**
+ * Splits `amount` paise between `memberIds` as evenly as possible. The
+ * leftover paise go one each to consecutive members in the order given
+ * (callers pass trip-member order), wrapping around, starting at a position
+ * chosen by `seed`. With no seed that is the first member, so ₹100 between 3
+ * is 33.34 + 33.33 + 33.33.
+ */
+export function splitEqually(amount: number, memberIds: string[], seed = ''): Shares {
   const shares: Shares = {}
   const count = memberIds.length
   if (count === 0) return shares
 
   const base = Math.floor(amount / count)
   const extra = amount - base * count
+  const offset = startOffset(seed, count)
   memberIds.forEach((id, index) => {
-    shares[id] = base + (index < extra ? 1 : 0)
+    const turn = (index - offset + count) % count
+    shares[id] = base + (turn < extra ? 1 : 0)
   })
   return shares
 }
@@ -27,18 +47,22 @@ export function splitEqually(amount: number, memberIds: string[]): Shares {
 /**
  * Splits `amount` paise by percentages given in basis points, using the
  * largest-remainder method so the shares add up to `amount` exactly. Ties go
- * to the earlier member, which matches the equal-split rule.
+ * to the member earliest in the order starting at the `seed` position, which
+ * matches the equal-split rule.
  */
 export function splitByPercent(
   amount: number,
   basisPoints: [id: string, basisPoints: number][],
+  seed = '',
 ): Shares {
+  const count = basisPoints.length
+  const offset = startOffset(seed, count)
   const parts = basisPoints.map(([id, bp], index) => {
     const product = amount * bp
     const remainder = product % FULL_PERCENT
     return {
       id,
-      index,
+      index: (index - offset + count) % count,
       floor: (product - remainder) / FULL_PERCENT,
       remainder,
     }
@@ -67,16 +91,17 @@ export function percentToBasisPoints(percent: number): number {
  * trip order so results never depend on key order in the saved data.
  */
 export function computeShares(
-  expense: Pick<Expense, 'amount' | 'split'>,
+  expense: Pick<Expense, 'id' | 'amount' | 'split'>,
   members: Member[],
 ): Shares {
   const { amount, split } = expense
+  const seed = expense.id
 
   switch (split.type) {
     case 'equal': {
       const included = new Set(split.memberIds)
       const ids = members.map((m) => m.id).filter((id) => included.has(id))
-      return splitEqually(amount, ids)
+      return splitEqually(amount, ids, seed)
     }
     case 'exact': {
       const shares: Shares = {}
@@ -94,7 +119,7 @@ export function computeShares(
           entries.push([id, percentToBasisPoints(percent)])
         }
       }
-      return splitByPercent(amount, entries)
+      return splitByPercent(amount, entries, seed)
     }
   }
 }
@@ -139,6 +164,7 @@ export function describeSplitNames(
   const people = ids.map((id) => names.get(id) ?? id)
   const label = SPLIT_LABELS[split.type]
   const rest = people.length - max
-  const shown = rest > 0 ? `${people.slice(0, max).join(', ')} +${rest}` : people.join(', ')
+  const shown =
+    rest > 0 ? `${people.slice(0, max).join(', ')} +${rest}` : people.join(', ')
   return { text: `${label}: ${shown}`, full: `${label}: ${people.join(', ')}` }
 }
