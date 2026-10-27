@@ -1,0 +1,71 @@
+{
+  "members": [
+    { "id": "m1", "name": "Aarav" },
+    { "id": "m2", "name": "Diya" },
+    { "id": "m3", "name": "Kabir" },
+    { "id": "m4", "name": "Meera" },
+    { "id": "m5", "name": "Rohan" }
+  ],
+  "expenses": [
+    {
+      "id": "e1",
+      "description": "Villa booking",
+      "amount": 2400000,
+      "paidBy": "m1",
+      "date": "2026-03-12",
+      "category": "Stay",
+      "split": { "type": "equal", "memberIds": ["m1", "m2", "m3", "m4", "m5"] }
+    },
+    {
+      "id": "e2",
+      "description": "Beach shack dinner",
+      "amount": 325000,
+      "paidBy": "m2",
+      "date": "2026-03-12",
+      "category": "Food",
+      "split": { "type": "equal", "memberIds": ["m1", "m2", "m3", "m4"] }
+    },
+    {
+      "id": "e3",
+      "description": "Scuba diving",
+      "amount": 1050000,
+      "paidBy": "m3",
+      "date": "2026-03-13",
+      "category": "Activities",
+      "split": {
+        "type": "exact",
+        "shares": { "m3": 350000, "m4": 350000, "m5": 350000 }
+      }
+    },
+    {
+      "id": "e4",
+      "description": "Scooter rental",
+      "amount": 200000,
+      "paidBy": "m5",
+      "date": "2026-03-13",
+      "category": "Travel",
+      "split": { "type": "percent", "shares": { "m5": 50, "m1": 25, "m2": 25 } }
+    },
+    {
+      "id": "e5",
+      "description": "Groceries",
+      "amount": 100000,
+      "paidBy": "m4",
+      "date": "2026-03-14",
+      "category": "Food",
+      "split": { "type": "equal", "memberIds": ["m1", "m2", "m3"] }
+    },
+    {
+      "id": "e6",
+      "description": "Airport cab",
+      "amount": 149999,
+      "paidBy": "m1",
+      "date": "2026-03-15",
+      "category": "Travel",
+      "split": {
+        "type": "percent",
+        "shares": { "m1": 33.33, "m2": 33.33, "m3": 33.34 }
+      }
+    }
+  ]
+}
