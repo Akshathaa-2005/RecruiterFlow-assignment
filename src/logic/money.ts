@@ -13,6 +13,11 @@ export function formatINR(paise: number): string {
   return `${sign}₹${INDIAN.format(rupees)}.${rest}`
 }
 
+/** 149999 -> "1499.99", 100000 -> "1000": a number as the user would type it. */
+export function toInputString(scaled: number): string {
+  return formatPercent(scaled)
+}
+
 /** 3333 -> "33.33", 5000 -> "50", 1250 -> "12.5" */
 export function formatPercent(basisPoints: number): string {
   const sign = basisPoints < 0 ? '-' : ''

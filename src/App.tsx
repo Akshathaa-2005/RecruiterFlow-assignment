@@ -1,6 +1,7 @@
 import { Route, Routes } from 'react-router-dom'
 import { Navbar } from './components/Navbar'
 import { AddExpensePage } from './pages/AddExpensePage'
+import { EditExpensePage } from './pages/EditExpensePage'
 import { ExpensesPage } from './pages/ExpensesPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 
@@ -12,6 +13,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<ExpensesPage />} />
           <Route path="/expenses/new" element={<AddExpensePage />} />
+          <Route path="/expenses/:id/edit" element={<EditExpensePage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>

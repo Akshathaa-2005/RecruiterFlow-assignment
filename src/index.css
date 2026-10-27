@@ -362,6 +362,24 @@ button:active,
   color: var(--brand-600);
 }
 
+.edit-btn {
+  display: inline-flex;
+  align-items: center;
+  background: var(--surface);
+  color: var(--brand-700);
+  border: 1px solid #e6c3a3;
+  border-radius: 999px;
+  padding: 0.3rem 0.9rem;
+  min-height: 2.25rem;
+  margin-right: 0.4rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.edit-btn:hover {
+  background: var(--brand-soft);
+}
+
 .delete-btn {
   background: var(--surface);
   color: var(--red);
@@ -1471,5 +1489,67 @@ legend {
 
 .member-note {
   font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.settle-summary {
+  margin: 0 0 0.6rem;
+  color: var(--muted);
+}
+
+.settle-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.settle-list > li {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 0.8rem 1rem;
+}
+
+.settle-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  font-size: 1.05rem;
+}
+
+.settle-head .amount {
+  margin-left: auto;
+}
+
+.settle-steps {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0.5rem 0 0;
+  border-top: 1px dashed var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.settle-steps li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  color: var(--muted);
+}
+
+.settle-list .amount {
+  font-weight: 800;
+  color: var(--brand-700);
+  white-space: nowrap;
+}
+
+.settle-empty {
+  margin: 0;
   color: var(--muted);
 }

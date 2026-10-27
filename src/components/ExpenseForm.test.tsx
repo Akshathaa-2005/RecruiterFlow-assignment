@@ -48,6 +48,17 @@ describe('ExpenseForm', () => {
     expect(description).toHaveFocus()
   })
 
+  it('shows a field\'s error as soon as you leave it, and only that field\'s', async () => {
+    const { user } = setup()
+
+    await user.click(screen.getByLabelText('Description'))
+    expect(screen.queryByText('Description is required')).not.toBeInTheDocument()
+
+    await user.tab()
+    expect(screen.getByText('Description is required')).toBeInTheDocument()
+    expect(screen.queryByText('Amount is required')).not.toBeInTheDocument()
+  })
+
   it('clears an error once the field is fixed', async () => {
     const { user } = setup()
     await user.click(screen.getByRole('button', { name: 'Save' }))

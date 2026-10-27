@@ -5,6 +5,7 @@ import { BalanceList } from '../components/BalanceList'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { Insights } from '../components/Insights'
 import { ExpenseTable } from '../components/ExpenseTable'
+import { SettleUp } from '../components/SettleUp'
 import {
   computeBalances,
   filterByCategory,
@@ -14,6 +15,7 @@ import {
 } from '../logic/balances'
 import { countExpensesInvolving } from '../logic/members'
 import { formatINR } from '../logic/money'
+import { suggestSettlements } from '../logic/settle'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { noticeDismissed } from '../store/noticeSlice'
 import { expenseDeleted, memberRemoved } from '../store/tripSlice'
@@ -34,6 +36,8 @@ export function ExpensesPage() {
     () => filterByCategory(sortExpenses(expenses), filter),
     [expenses, filter],
   )
+
+  const transfers = useMemo(() => suggestSettlements(balances), [balances])
 
   const usage = useMemo(
     () => new Map(members.map((m) => [m.id, countExpensesInvolving(m.id, expenses)])),
@@ -92,6 +96,8 @@ export function ExpensesPage() {
         usage={usage}
         onRemove={setPendingRemove}
       />
+
+      {expenses.length > 0 && <SettleUp members={members} transfers={transfers} />}
 
       {expenses.length > 0 && <Insights members={members} expenses={expenses} />}
 

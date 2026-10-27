@@ -31,11 +31,21 @@ const tripSlice = createSlice({
       if (inUse || state.members.length <= 1) return
       state.members = state.members.filter((m) => m.id !== id)
     },
+    expenseUpdated(state, action: PayloadAction<Expense>) {
+      const index = state.expenses.findIndex((e) => e.id === action.payload.id)
+      if (index !== -1) state.expenses[index] = action.payload
+    },
     expenseDeleted(state, action: PayloadAction<string>) {
       state.expenses = state.expenses.filter((e) => e.id !== action.payload)
     },
   },
 })
 
-export const { expenseAdded, expenseDeleted, memberAdded, memberRemoved } = tripSlice.actions
+export const {
+  expenseAdded,
+  expenseDeleted,
+  expenseUpdated,
+  memberAdded,
+  memberRemoved,
+} = tripSlice.actions
 export default tripSlice.reducer

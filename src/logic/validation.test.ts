@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Member } from '../types'
-import { validateExpenseForm, type ExpenseFormValues } from './validation'
+import { validateExpenseForm, visibleErrors, type ExpenseFormValues } from './validation'
 
 const members: Member[] = [
   { id: 'm1', name: 'Aarav' },
@@ -163,5 +163,21 @@ describe('validateExpenseForm: percentage split', () => {
       m2: 'Must be between 0 and 100',
       m3: 'Use at most 2 decimals',
     })
+  })
+})
+
+describe('visibleErrors', () => {
+  it('keeps back errors for fields that are not shown yet', () => {
+    const errors = errorsFor({ description: '', amount: '', paidBy: '' })
+    const shown = visibleErrors(errors, (key) => key === 'amount')
+    expect(shown.amount).toBe('Amount is required')
+    expect(shown.description).toBeUndefined()
+    expect(shown.paidBy).toBeUndefined()
+  })
+
+  it('filters per-member share errors by their own key', () => {
+    const errors = errorsFor({ splitType: 'percent', percent: { m1: '150', m2: 'x' } })
+    const shown = visibleErrors(errors, (key) => key === 'share:m1')
+    expect(Object.keys(shown.shares)).toEqual(['m1'])
   })
 })

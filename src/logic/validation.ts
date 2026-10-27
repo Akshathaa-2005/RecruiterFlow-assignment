@@ -255,3 +255,33 @@ function sum(numbers: number[]): number {
 function nonZero(values: Record<string, number>): Record<string, number> {
   return Object.fromEntries(Object.entries(values).filter(([, v]) => v !== 0))
 }
+
+/**
+ * The errors to actually show: those whose field passes `show`. Used to hold
+ * an error back until the user has left the field, or tried to save.
+ * Keys are the field names, `split`, and `share:<memberId>` for share inputs.
+ */
+export function visibleErrors(
+  errors: ExpenseFormErrors,
+  show: (key: string) => boolean,
+): ExpenseFormErrors {
+  const shown = (key: string, message: string | undefined) =>
+    message !== undefined && show(key) ? message : undefined
+  const description = shown('description', errors.description)
+  const amount = shown('amount', errors.amount)
+  const paidBy = shown('paidBy', errors.paidBy)
+  const date = shown('date', errors.date)
+  const category = shown('category', errors.category)
+  const split = shown('split', errors.split)
+  return {
+    ...(description !== undefined ? { description } : {}),
+    ...(amount !== undefined ? { amount } : {}),
+    ...(paidBy !== undefined ? { paidBy } : {}),
+    ...(date !== undefined ? { date } : {}),
+    ...(category !== undefined ? { category } : {}),
+    ...(split !== undefined ? { split } : {}),
+    shares: Object.fromEntries(
+      Object.entries(errors.shares).filter(([id]) => show(`share:${id}`)),
+    ),
+  }
+}

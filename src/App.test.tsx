@@ -118,6 +118,42 @@ describe('Expenses page', () => {
   })
 })
 
+describe('settle up', () => {
+  it('suggests who pays whom', () => {
+    renderApp('/')
+    const section = screen.getByRole('region', { name: 'Settle up' })
+    expect(within(section).getAllByRole('listitem').length).toBeGreaterThan(0)
+    expect(section).toHaveTextContent('pays')
+  })
+})
+
+describe('editing an expense', () => {
+  it('opens with the saved values and saves the changes', async () => {
+    const { user, store } = renderApp('/')
+
+    await user.click(screen.getByRole('link', { name: 'Edit Groceries' }))
+    expect(screen.getByRole('heading', { name: 'Edit expense' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Description')).toHaveValue('Groceries')
+    expect(screen.getByLabelText('Amount (₹)')).toHaveValue('1000')
+
+    await user.clear(screen.getByLabelText('Description'))
+    await user.type(screen.getByLabelText('Description'), 'Supermarket')
+    await user.click(screen.getByRole('button', { name: 'Save changes' }))
+
+    expect(screen.getByRole('status')).toHaveTextContent('Supermarket')
+    expect(screen.getByRole('status')).toHaveTextContent('was updated')
+    expect(store.getState().trip.expenses).toHaveLength(6)
+    expect(
+      store.getState().trip.expenses.filter((e) => e.description === 'Groceries'),
+    ).toHaveLength(0)
+  })
+
+  it('shows a message for an expense that does not exist', () => {
+    renderApp('/expenses/nope/edit')
+    expect(screen.getByRole('heading', { name: 'Expense not found' })).toBeInTheDocument()
+  })
+})
+
 describe('removing a member', () => {
   it('removes someone who is in no expense, after confirming', async () => {
     const { user, store } = renderApp('/')

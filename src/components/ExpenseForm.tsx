@@ -5,6 +5,7 @@ import {
   emptyErrors,
   MAX_DESCRIPTION_LENGTH,
   validateExpenseForm,
+  visibleErrors,
   type ExpenseFormValues,
 } from '../logic/validation'
 import { CATEGORIES, type Member, type NewExpense, type SplitType } from '../types'
@@ -20,6 +21,8 @@ interface ExpenseFormProps {
   onValuesChange?: ((values: ExpenseFormValues) => void) | undefined
   /** Saves a new member and returns it, so the form can select them. */
   onAddMember: (name: string) => Member
+  /** Label of the submit button; "Save" when omitted */
+  submitLabel?: string | undefined
   onSubmit: (expense: NewExpense) => void
   onCancel: () => void
 }
@@ -55,6 +58,7 @@ export function ExpenseForm({
   initialValues,
   onValuesChange,
   onAddMember,
+  submitLabel = 'Save',
   onSubmit,
   onCancel,
 }: ExpenseFormProps) {
@@ -66,9 +70,13 @@ export function ExpenseForm({
   const [newName, setNewName] = useState('')
   const [newNameError, setNewNameError] = useState<string>()
 
-  // Errors only appear after the first Save, then follow the input live.
+  // An error appears once the user leaves its field, or after the first Save
+  // (which shows all of them), and then follows the input live.
+  const [touched, setTouched] = useState<ReadonlySet<string>>(new Set())
   const result = validateExpenseForm(values, members, today)
-  const errors = attempts > 0 && !result.ok ? result.errors : emptyErrors()
+  const errors = result.ok
+    ? emptyErrors()
+    : visibleErrors(result.errors, (key) => attempts > 0 || touched.has(key))
 
   // Live breakdown, shown from the first keystroke.
   const preview = previewSplit(values, members)
@@ -86,6 +94,10 @@ export function ExpenseForm({
       ?.querySelector<HTMLElement>('[aria-invalid="true"], [data-invalid="true"]')
       ?.focus()
   }, [attempts])
+
+  function touch(key: string) {
+    setTouched((current) => (current.has(key) ? current : new Set(current).add(key)))
+  }
 
   function update<K extends keyof ExpenseFormValues>(
     key: K,
@@ -165,6 +177,9 @@ export function ExpenseForm({
             errors.description,
             `Up to ${MAX_DESCRIPTION_LENGTH} characters`,
           )}
+          onBlur={() => {
+            touch('description')
+          }}
           type="text"
           value={values.description}
           onChange={(e) => {
@@ -177,6 +192,9 @@ export function ExpenseForm({
         <Field id="amount" label="Amount (₹)" error={errors.amount} hint={AMOUNT_HINT}>
           <input
             {...fieldA11y('amount', errors.amount, AMOUNT_HINT)}
+            onBlur={() => {
+              touch('amount')
+            }}
             type="text"
             inputMode="decimal"
             autoComplete="off"
@@ -190,6 +208,9 @@ export function ExpenseForm({
         <Field id="date" label="Date" error={errors.date}>
           <input
             {...fieldA11y('date', errors.date)}
+            onBlur={() => {
+              touch('date')
+            }}
             type="date"
             max={today}
             value={values.date}
@@ -204,6 +225,9 @@ export function ExpenseForm({
         <Field id="paidBy" label="Paid by" error={errors.paidBy}>
           <select
             {...fieldA11y('paidBy', errors.paidBy)}
+            onBlur={() => {
+              touch('paidBy')
+            }}
             value={addingMember ? ADD_MEMBER_OPTION : values.paidBy}
             onChange={(e) => {
               if (e.target.value === ADD_MEMBER_OPTION) {
@@ -227,6 +251,9 @@ export function ExpenseForm({
         <Field id="category" label="Category" error={errors.category}>
           <select
             {...fieldA11y('category', errors.category)}
+            onBlur={() => {
+              touch('category')
+            }}
             value={values.category}
             onChange={(e) => {
               update('category', e.target.value)
@@ -315,6 +342,9 @@ export function ExpenseForm({
                 <input
                   type="checkbox"
                   checked={values.equalMemberIds.includes(m.id)}
+                  onBlur={() => {
+                    touch('split')
+                  }}
                   onChange={(e) => {
                     toggleMember(m.id, e.target.checked)
                   }}
@@ -371,6 +401,9 @@ export function ExpenseForm({
               >
                 <input
                   {...fieldA11y(id, error, hint)}
+                  onBlur={() => {
+                    touch(`share:${m.id}`)
+                  }}
                   type="text"
                   inputMode="decimal"
                   autoComplete="off"
@@ -397,7 +430,7 @@ export function ExpenseForm({
           Cancel
         </button>
         <button type="submit" className="primary">
-          Save
+          {submitLabel}
         </button>
       </div>
     </form>

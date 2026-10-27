@@ -1,5 +1,6 @@
 import { formatDate } from '../logic/date'
 import { formatINR } from '../logic/money'
+import { Link } from 'react-router-dom'
 import { describeSplitNames } from '../logic/split'
 import type { Expense, Member } from '../types'
 
@@ -53,6 +54,13 @@ export function ExpenseTable({ expenses, members, onDelete }: ExpenseTableProps)
                 {split.text}
               </td>
               <td className="row-actions">
+                <Link
+                  to={`/expenses/${expense.id}/edit`}
+                  className="edit-btn"
+                  aria-label={`Edit ${expense.description}`}
+                >
+                  Edit
+                </Link>
                 <button
                   type="button"
                   className="delete-btn"
