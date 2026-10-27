@@ -1,5 +1,5 @@
 import { createSlice, nanoid, type PayloadAction } from '@reduxjs/toolkit'
-import type { Expense, NewExpense, TripData } from '../types'
+import type { Expense, Member, NewExpense, TripData } from '../types'
 
 // Real state is always supplied by makeStore; this is only a typed placeholder.
 const initialState: TripData = { members: [], expenses: [] }
@@ -16,11 +16,14 @@ const tripSlice = createSlice({
         return { payload: { ...expense, id: nanoid() } }
       },
     },
+    memberAdded(state, action: PayloadAction<Member>) {
+      state.members.push(action.payload)
+    },
     expenseDeleted(state, action: PayloadAction<string>) {
       state.expenses = state.expenses.filter((e) => e.id !== action.payload)
     },
   },
 })
 
-export const { expenseAdded, expenseDeleted } = tripSlice.actions
+export const { expenseAdded, expenseDeleted, memberAdded } = tripSlice.actions
 export default tripSlice.reducer

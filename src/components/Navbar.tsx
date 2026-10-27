@@ -22,7 +22,7 @@ export function Navbar() {
     <header className="navbar">
       <div className="navbar-inner">
         <Link to="/" className="brand">
-          <img src={logo} alt="" width="36" height="36" />
+          <img src={logo} alt="" width="46" height="46" />
           <span>Trip Splitter</span>
         </Link>
         <nav aria-label="Main">

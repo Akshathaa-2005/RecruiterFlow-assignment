@@ -119,3 +119,26 @@ export function describeSplit(split: Split): string {
       return `Percentages, ${people}`
   }
 }
+
+const SPLIT_LABELS: Record<Split['type'], string> = {
+  equal: 'Equally',
+  exact: 'Exact amounts',
+  percent: 'Percentages',
+}
+
+/**
+ * "Equally: Aarav, Meera, Rohan" for the table. Shows at most `max` names and
+ * summarises the rest as "+2"; `full` always lists everyone, for a tooltip.
+ */
+export function describeSplitNames(
+  split: Split,
+  names: Map<string, string>,
+  max = 3,
+): { text: string; full: string } {
+  const ids = split.type === 'equal' ? split.memberIds : Object.keys(split.shares)
+  const people = ids.map((id) => names.get(id) ?? id)
+  const label = SPLIT_LABELS[split.type]
+  const rest = people.length - max
+  const shown = rest > 0 ? `${people.slice(0, max).join(', ')} +${rest}` : people.join(', ')
+  return { text: `${label}: ${shown}`, full: `${label}: ${people.join(', ')}` }
+}

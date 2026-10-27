@@ -1,3 +1,4 @@
+import { nanoid } from '@reduxjs/toolkit'
 import { useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ExpenseForm } from '../components/ExpenseForm'
@@ -6,8 +7,8 @@ import type { ExpenseFormValues } from '../logic/validation'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { draftChanged, draftCleared } from '../store/draftSlice'
 import { noticeDismissed } from '../store/noticeSlice'
-import { expenseAdded } from '../store/tripSlice'
-import type { NewExpense } from '../types'
+import { expenseAdded, memberAdded } from '../store/tripSlice'
+import type { Member, NewExpense } from '../types'
 
 export function AddExpensePage() {
   const members = useAppSelector((state) => state.trip.members)
@@ -27,6 +28,12 @@ export function AddExpensePage() {
     [dispatch],
   )
 
+  function handleAddMember(name: string): Member {
+    const member = { id: nanoid(), name }
+    dispatch(memberAdded(member))
+    return member
+  }
+
   function handleSubmit(expense: NewExpense) {
     dispatch(expenseAdded(expense))
     void navigate('/')
@@ -43,6 +50,7 @@ export function AddExpensePage() {
         today={todayISO()}
         initialValues={draft ?? undefined}
         onValuesChange={handleValuesChange}
+        onAddMember={handleAddMember}
         onSubmit={handleSubmit}
         onCancel={() => {
           dispatch(draftCleared())

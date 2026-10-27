@@ -57,7 +57,7 @@ describe('Expenses page', () => {
     expect(within(first).getByText('Airport cab')).toBeInTheDocument()
     expect(within(first).getByText('₹1,499.99')).toBeInTheDocument()
     expect(within(last).getByText('Villa booking')).toBeInTheDocument()
-    expect(within(last).getByText('Equally, 5 people')).toBeInTheDocument()
+    expect(within(last).getByText(/^Equally: .+ \+2$/)).toBeInTheDocument()
   })
 
   it('filters by category and totals what is shown', async () => {
@@ -117,6 +117,18 @@ describe('Expenses page', () => {
 })
 
 describe('adding an expense', () => {
+  it('lets you add a new member and pick them as payer', async () => {
+    const { user, store } = renderApp('/expenses/new')
+
+    await user.selectOptions(screen.getByLabelText('Paid by'), '+ Add new member…')
+    await user.type(screen.getByLabelText('New member name'), 'Zara')
+    await user.click(screen.getByRole('button', { name: 'Add' }))
+
+    expect(store.getState().trip.members.map((m) => m.name)).toContain('Zara')
+    expect(screen.getByLabelText('Paid by')).toHaveDisplayValue('Zara')
+    expect(screen.getByRole('checkbox', { name: 'Zara' })).toBeChecked()
+  })
+
   it('saves, returns to Expenses with a message, and updates balances', async () => {
     const { user, store } = renderApp('/expenses/new')
 

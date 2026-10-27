@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, type SyntheticEvent } from 'react'
-import { formatINR } from '../logic/money'
+import { formatINR, MAX_AMOUNT } from '../logic/money'
 import { describeSplitStatus, previewSplit } from '../logic/preview'
 import {
   emptyErrors,
+  MAX_DESCRIPTION_LENGTH,
   validateExpenseForm,
   type ExpenseFormValues,
 } from '../logic/validation'
@@ -17,9 +18,16 @@ interface ExpenseFormProps {
   initialValues?: ExpenseFormValues | undefined
   /** Called whenever the user changes something */
   onValuesChange?: ((values: ExpenseFormValues) => void) | undefined
+  /** Saves a new member and returns it, so the form can select them. */
+  onAddMember: (name: string) => Member
   onSubmit: (expense: NewExpense) => void
   onCancel: () => void
 }
+
+const MAX_MEMBER_NAME_LENGTH = 30
+/** Choosing this in the Paid by list opens the new-member box. */
+const ADD_MEMBER_OPTION = '__add_member__'
+const AMOUNT_HINT = `Up to ${formatINR(MAX_AMOUNT)}, with at most 2 decimals`
 
 const SPLIT_OPTIONS: { type: SplitType; label: string }[] = [
   { type: 'equal', label: 'Equally' },
@@ -46,15 +54,17 @@ export function ExpenseForm({
   today,
   initialValues,
   onValuesChange,
+  onAddMember,
   onSubmit,
   onCancel,
 }: ExpenseFormProps) {
-  const [values, setValues] = useState(
-    () => initialValues ?? blankValues(members, today),
-  )
+  const [values, setValues] = useState(() => initialValues ?? blankValues(members, today))
   const untouched = useRef(values)
   const [attempts, setAttempts] = useState(0)
   const formRef = useRef<HTMLFormElement>(null)
+  const [addingMember, setAddingMember] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [newNameError, setNewNameError] = useState<string>()
 
   // Errors only appear after the first Save, then follow the input live.
   const result = validateExpenseForm(values, members, today)
@@ -77,7 +87,10 @@ export function ExpenseForm({
       ?.focus()
   }, [attempts])
 
-  function update<K extends keyof ExpenseFormValues>(key: K, value: ExpenseFormValues[K]) {
+  function update<K extends keyof ExpenseFormValues>(
+    key: K,
+    value: ExpenseFormValues[K],
+  ) {
     setValues((current) => ({ ...current, [key]: value }))
   }
 
@@ -95,6 +108,31 @@ export function ExpenseForm({
         ? [...current.equalMemberIds, memberId]
         : current.equalMemberIds.filter((id) => id !== memberId),
     }))
+  }
+
+  function addMember() {
+    const name = newName.trim()
+    if (name === '') {
+      setNewNameError('Enter a name')
+      return
+    }
+    if (name.length > MAX_MEMBER_NAME_LENGTH) {
+      setNewNameError(`Name must be at most ${MAX_MEMBER_NAME_LENGTH} characters`)
+      return
+    }
+    if (members.some((m) => m.name.toLowerCase() === name.toLowerCase())) {
+      setNewNameError('A member with this name already exists')
+      return
+    }
+    const member = onAddMember(name)
+    setValues((current) => ({
+      ...current,
+      paidBy: member.id,
+      equalMemberIds: [...current.equalMemberIds, member.id],
+    }))
+    setNewName('')
+    setNewNameError(undefined)
+    setAddingMember(false)
   }
 
   function handleSubmit(event: SyntheticEvent) {
@@ -115,9 +153,18 @@ export function ExpenseForm({
 
   return (
     <form ref={formRef} onSubmit={handleSubmit} noValidate className="form">
-      <Field id="description" label="Description" error={errors.description}>
+      <Field
+        id="description"
+        label="Description"
+        error={errors.description}
+        hint={`Up to ${MAX_DESCRIPTION_LENGTH} characters`}
+      >
         <input
-          {...fieldA11y('description', errors.description)}
+          {...fieldA11y(
+            'description',
+            errors.description,
+            `Up to ${MAX_DESCRIPTION_LENGTH} characters`,
+          )}
           type="text"
           value={values.description}
           onChange={(e) => {
@@ -127,9 +174,9 @@ export function ExpenseForm({
       </Field>
 
       <div className="field-row">
-        <Field id="amount" label="Amount (₹)" error={errors.amount}>
+        <Field id="amount" label="Amount (₹)" error={errors.amount} hint={AMOUNT_HINT}>
           <input
-            {...fieldA11y('amount', errors.amount)}
+            {...fieldA11y('amount', errors.amount, AMOUNT_HINT)}
             type="text"
             inputMode="decimal"
             autoComplete="off"
@@ -157,9 +204,14 @@ export function ExpenseForm({
         <Field id="paidBy" label="Paid by" error={errors.paidBy}>
           <select
             {...fieldA11y('paidBy', errors.paidBy)}
-            value={values.paidBy}
+            value={addingMember ? ADD_MEMBER_OPTION : values.paidBy}
             onChange={(e) => {
-              update('paidBy', e.target.value)
+              if (e.target.value === ADD_MEMBER_OPTION) {
+                setAddingMember(true)
+              } else {
+                setAddingMember(false)
+                update('paidBy', e.target.value)
+              }
             }}
           >
             <option value="">Select a member</option>
@@ -168,6 +220,7 @@ export function ExpenseForm({
                 {m.name}
               </option>
             ))}
+            <option value={ADD_MEMBER_OPTION}>+ Add new member…</option>
           </select>
         </Field>
 
@@ -189,6 +242,50 @@ export function ExpenseForm({
         </Field>
       </div>
 
+      {addingMember && (
+        <div className="add-member">
+          <div className="add-member-row">
+            <input
+              type="text"
+              aria-label="New member name"
+              placeholder="New member name"
+              value={newName}
+              autoFocus
+              onChange={(e) => {
+                setNewName(e.target.value)
+                setNewNameError(undefined)
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  addMember()
+                }
+              }}
+            />
+            <button type="button" className="primary" onClick={addMember}>
+              Add
+            </button>
+            <button
+              type="button"
+              className="secondary"
+              onClick={() => {
+                setAddingMember(false)
+                setNewName('')
+                setNewNameError(undefined)
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+          {newNameError ? (
+            <p className="error" role="alert">
+              {newNameError}
+            </p>
+          ) : (
+            <p className="hint">Up to {MAX_MEMBER_NAME_LENGTH} characters</p>
+          )}
+        </div>
+      )}
       <fieldset className="split-type">
         <legend>Split</legend>
         <div className="segmented">
@@ -250,7 +347,9 @@ export function ExpenseForm({
       {preview.type !== 'equal' && (
         <fieldset className="members" {...groupProps}>
           <legend>
-            {preview.type === 'exact' ? 'Amount per member (₹)' : 'Percentage per member (%)'}
+            {preview.type === 'exact'
+              ? 'Amount per member (₹)'
+              : 'Percentage per member (%)'}
           </legend>
 
           {members.map((m) => {
@@ -293,7 +392,6 @@ export function ExpenseForm({
           </GroupMessage>
         </fieldset>
       )}
-
       <div className="actions">
         <button type="button" className="secondary" onClick={onCancel}>
           Cancel

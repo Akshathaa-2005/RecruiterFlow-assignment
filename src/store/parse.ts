@@ -104,6 +104,18 @@ function parseExpense(value: unknown, memberIds: Set<string>): Expense | undefin
   return { id, description, amount, paidBy, date, category, split }
 }
 
+export function parseMembers(value: unknown): Member[] | undefined {
+  const items = asArray(value)
+  if (!items) return undefined
+  const members: Member[] = []
+  for (const item of items) {
+    const member = parseMember(item)
+    if (!member) return undefined
+    members.push(member)
+  }
+  return members.length > 0 ? members : undefined
+}
+
 /** Returns undefined unless every member and expense is valid. */
 export function parseExpenses(
   value: unknown,

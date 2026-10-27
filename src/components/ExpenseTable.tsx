@@ -1,6 +1,6 @@
 import { formatDate } from '../logic/date'
 import { formatINR } from '../logic/money'
-import { describeSplit } from '../logic/split'
+import { describeSplitNames } from '../logic/split'
 import type { Expense, Member } from '../types'
 
 interface ExpenseTableProps {
@@ -34,36 +34,39 @@ export function ExpenseTable({ expenses, members, onDelete }: ExpenseTableProps)
         </tr>
       </thead>
       <tbody>
-        {expenses.map((expense) => (
-          <tr key={expense.id}>
-            <td className="c-date">{formatDate(expense.date)}</td>
-            <td className="c-desc">{expense.description}</td>
-            <td className="c-cat">
-              <span className={`badge cat-${expense.category.toLowerCase()}`}>
-                {expense.category}
-              </span>
-            </td>
-            <td className="c-paid" data-label="Paid by">
-              {names.get(expense.paidBy) ?? expense.paidBy}
-            </td>
-            <td className="c-amount num">{formatINR(expense.amount)}</td>
-            <td className="c-split" data-label="Split">
-              {describeSplit(expense.split)}
-            </td>
-            <td className="row-actions">
-              <button
-                type="button"
-                className="delete-btn"
-                aria-label={`Delete ${expense.description}`}
-                onClick={() => {
-                  onDelete(expense)
-                }}
-              >
-                Delete
-              </button>
-            </td>
-          </tr>
-        ))}
+        {expenses.map((expense) => {
+          const split = describeSplitNames(expense.split, names)
+          return (
+            <tr key={expense.id}>
+              <td className="c-date">{formatDate(expense.date)}</td>
+              <td className="c-desc">{expense.description}</td>
+              <td className="c-cat">
+                <span className={`badge cat-${expense.category.toLowerCase()}`}>
+                  {expense.category}
+                </span>
+              </td>
+              <td className="c-paid" data-label="Paid by">
+                {names.get(expense.paidBy) ?? expense.paidBy}
+              </td>
+              <td className="c-amount num">{formatINR(expense.amount)}</td>
+              <td className="c-split" data-label="Split" title={split.full}>
+                {split.text}
+              </td>
+              <td className="row-actions">
+                <button
+                  type="button"
+                  className="delete-btn"
+                  aria-label={`Delete ${expense.description}`}
+                  onClick={() => {
+                    onDelete(expense)
+                  }}
+                >
+                  Delete
+                </button>
+              </td>
+            </tr>
+          )
+        })}
       </tbody>
     </table>
   )

@@ -3,7 +3,7 @@ import type { TripData } from '../types'
 import draftReducer from './draftSlice'
 import noticeReducer from './noticeSlice'
 import { sampleData } from './sample'
-import { loadExpenses, saveExpenses } from './storage'
+import { loadExpenses, loadMembers, saveExpenses, saveMembers } from './storage'
 import tripReducer from './tripSlice'
 
 interface StoreOptions {
@@ -18,20 +18,27 @@ interface StoreOptions {
  * state change is saved without every component having to remember to.
  */
 export function makeStore({ storage, initial = sampleData }: StoreOptions = {}) {
-  const expenses = (storage && loadExpenses(storage, initial.members)) ?? initial.expenses
+  const members = (storage && loadMembers(storage)) ?? initial.members
+  const expenses = (storage && loadExpenses(storage, members)) ?? initial.expenses
 
   const store = configureStore({
     reducer: { trip: tripReducer, notice: noticeReducer, draft: draftReducer },
-    preloadedState: { trip: { members: initial.members, expenses } },
+    preloadedState: { trip: { members, expenses } },
   })
 
   if (storage) {
-    let saved = store.getState().trip.expenses
+    let savedExpenses = store.getState().trip.expenses
+    let savedMembers = store.getState().trip.members
     store.subscribe(() => {
-      const current = store.getState().trip.expenses
-      if (current === saved) return
-      saved = current
-      saveExpenses(storage, current)
+      const trip = store.getState().trip
+      if (trip.members !== savedMembers) {
+        savedMembers = trip.members
+        saveMembers(storage, trip.members)
+      }
+      if (trip.expenses !== savedExpenses) {
+        savedExpenses = trip.expenses
+        saveExpenses(storage, trip.expenses)
+      }
     })
   }
 

@@ -14,6 +14,7 @@ function setup() {
     <ExpenseForm
       members={sampleData.members}
       today={today}
+      onAddMember={(name) => ({ id: 'new', name })}
       onSubmit={onSubmit}
       onCancel={onCancel}
     />,
