@@ -1,6 +1,6 @@
 # Trip Splitter
 
-Two-page app (Expenses, Add expense) for splitting a group trip's costs. React, Redux Toolkit, React Router, strict TypeScript. No backend; expenses persist in `localStorage`.
+Two-page app (Expenses, Add expense) for splitting a group trip's costs. React, Redux Toolkit, React Router, strict TypeScript. No backend; members and expenses persist in `localStorage`.
 
 ## Run it
 
@@ -13,7 +13,7 @@ npm test           # vitest + React Testing Library
 npm run build
 ```
 
-**Not finished / not done:** nothing from the brief is missing. Gaps: no editing of an existing expense, members are fixed to the sample data, and I checked the 360 px layout by CSS reasoning and tests, not on a real device.
+**Not finished / not done:** nothing from the brief is missing. Gaps: no editing of an existing expense, no renaming members (add one from the Paid by list, remove one from its Balances card once it is in no expense), and I checked the 360 px layout by CSS reasoning and tests, not on a real device.
 
 ## Rules I chose
 
@@ -25,7 +25,7 @@ npm run build
 
 1. **Logic outside React.** Parsing, splitting, balances and validation are plain functions in `src/logic/` (tested without React). `validateExpenseForm` returns either the finished `NewExpense` or an error object, so the form never parses anything itself.
 2. **Form state stays in the component; Redux holds only shared data.** The form keeps raw strings in `useState`. Errors are *derived* on each render from `validateExpenseForm` (shown after the first Save, then live), so there is no error state to keep in sync. Redux holds members, expenses and the one-line confirmation message, which the Add page dispatches and the Expenses page shows.
-3. **`localStorage` is a store subscriber, not in reducers or components.** `makeStore` loads saved expenses through a type-guard parser (`src/store/parse.ts`, no casts) and saves when `state.trip.expenses` changes. Reducers stay pure. Unreadable or inconsistent saved data (bad JSON, unknown member, shares that do not add up) falls back to the sample data.
+3. **`localStorage` is a store subscriber, not in reducers or components.** `makeStore` loads saved members and expenses through type-guard parsers (`src/store/parse.ts`, no casts) and saves when `state.trip.members` or `state.trip.expenses` changes. Reducers stay pure. Unreadable or inconsistent saved data (bad JSON, unknown member, shares that do not add up) falls back to the sample data.
 
 ## With another day
 

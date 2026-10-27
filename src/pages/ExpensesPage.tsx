@@ -12,11 +12,12 @@ import {
   totalAmount,
   type CategoryFilter,
 } from '../logic/balances'
+import { countExpensesInvolving } from '../logic/members'
 import { formatINR } from '../logic/money'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { noticeDismissed } from '../store/noticeSlice'
-import { expenseDeleted } from '../store/tripSlice'
-import { CATEGORIES, isCategory, type Expense } from '../types'
+import { expenseDeleted, memberRemoved } from '../store/tripSlice'
+import { CATEGORIES, isCategory, type Expense, type Member } from '../types'
 
 export function ExpensesPage() {
   const members = useAppSelector((state) => state.trip.members)
@@ -26,11 +27,17 @@ export function ExpensesPage() {
 
   const [filter, setFilter] = useState<CategoryFilter>('All')
   const [pendingDelete, setPendingDelete] = useState<Expense | null>(null)
+  const [pendingRemove, setPendingRemove] = useState<Member | null>(null)
 
   const balances = useMemo(() => computeBalances(members, expenses), [members, expenses])
   const shown = useMemo(
     () => filterByCategory(sortExpenses(expenses), filter),
     [expenses, filter],
+  )
+
+  const usage = useMemo(
+    () => new Map(members.map((m) => [m.id, countExpensesInvolving(m.id, expenses)])),
+    [members, expenses],
   )
 
   function handleFilterChange(value: string) {
@@ -79,7 +86,12 @@ export function ExpensesPage() {
         </div>
       )}
 
-      <BalanceList members={members} balances={balances} />
+      <BalanceList
+        members={members}
+        balances={balances}
+        usage={usage}
+        onRemove={setPendingRemove}
+      />
 
       {expenses.length > 0 && <Insights members={members} expenses={expenses} />}
 
@@ -136,6 +148,21 @@ export function ExpensesPage() {
           Total shown: <strong>{formatINR(totalAmount(shown))}</strong>
         </p>
       </section>
+
+      {pendingRemove && (
+        <ConfirmDialog
+          title="Remove member?"
+          message={`${pendingRemove.name} will be removed from the trip. They are not part of any expense.`}
+          confirmLabel="Remove"
+          onCancel={() => {
+            setPendingRemove(null)
+          }}
+          onConfirm={() => {
+            dispatch(memberRemoved(pendingRemove))
+            setPendingRemove(null)
+          }}
+        />
+      )}
 
       {pendingDelete && (
         <ConfirmDialog

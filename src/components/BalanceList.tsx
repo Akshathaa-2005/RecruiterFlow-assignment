@@ -5,10 +5,13 @@ import type { Member } from '../types'
 interface BalanceListProps {
   members: Member[]
   balances: Balance[]
+  /** Expenses each member is part of, by member id */
+  usage: Map<string, number>
+  onRemove: (member: Member) => void
 }
 
-export function BalanceList({ members, balances }: BalanceListProps) {
-  const names = new Map(members.map((m) => [m.id, m.name]))
+export function BalanceList({ members, balances, usage, onRemove }: BalanceListProps) {
+  const byId = new Map(members.map((m) => [m.id, m]))
 
   return (
     <section aria-labelledby="balances-heading">
@@ -16,7 +19,9 @@ export function BalanceList({ members, balances }: BalanceListProps) {
       <ul className="balances">
         {balances.map(({ memberId, amount }) => {
           const status = balanceStatus(amount)
-          const name = names.get(memberId) ?? memberId
+          const member = byId.get(memberId)
+          const name = member?.name ?? memberId
+          const used = usage.get(memberId) ?? 0
           return (
             <li key={memberId} className={`balance ${status.kind}`}>
               <span className="avatar" aria-hidden="true">
@@ -28,6 +33,23 @@ export function BalanceList({ members, balances }: BalanceListProps) {
                 {status.kind === 'owes' && `owes ${formatINR(status.amount)}`}
                 {status.kind === 'settled' && 'settled up'}
               </span>
+              {member && used === 0 && members.length > 1 && (
+                <button
+                  type="button"
+                  className="remove-member"
+                  aria-label={`Remove ${name}`}
+                  onClick={() => {
+                    onRemove(member)
+                  }}
+                >
+                  Remove
+                </button>
+              )}
+              {used > 0 && (
+                <span className="member-note">
+                  In {used} {used === 1 ? 'expense' : 'expenses'}
+                </span>
+              )}
             </li>
           )
         })}

@@ -2,9 +2,11 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Provider } from 'react-redux'
 import { MemoryRouter } from 'react-router-dom'
+import { act } from 'react'
 import { describe, expect, it } from 'vitest'
 import App from './App'
 import { makeStore } from './store/store'
+import { memberAdded } from './store/tripSlice'
 
 function renderApp(route = '/') {
   const store = makeStore({ storage: localStorage })
@@ -113,6 +115,29 @@ describe('Expenses page', () => {
     }
     expect(screen.getByText('No expenses yet.')).toBeInTheDocument()
     expect(screen.getAllByText('settled up')).toHaveLength(5)
+  })
+})
+
+describe('removing a member', () => {
+  it('removes someone who is in no expense, after confirming', async () => {
+    const { user, store } = renderApp('/')
+    act(() => {
+      store.dispatch(memberAdded({ id: 'z', name: 'Zara' }))
+    })
+
+    await user.click(screen.getByRole('button', { name: 'Remove Zara' }))
+    await user.click(
+      within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Remove' }),
+    )
+
+    expect(store.getState().trip.members.map((m) => m.name)).not.toContain('Zara')
+    expect(screen.getByRole('status')).toHaveTextContent('Zara was removed')
+  })
+
+  it('does not offer Remove for a member who is in an expense', () => {
+    renderApp('/')
+    expect(screen.queryByRole('button', { name: 'Remove Aarav' })).not.toBeInTheDocument()
+    expect(screen.getAllByText(/^In \d+ expenses?$/).length).toBeGreaterThan(0)
   })
 })
 

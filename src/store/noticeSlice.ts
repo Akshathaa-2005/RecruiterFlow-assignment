@@ -1,5 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit'
-import { expenseAdded, expenseDeleted } from './tripSlice'
+import { expenseAdded, expenseDeleted, memberRemoved } from './tripSlice'
 
 interface NoticeState {
   message: string | null
@@ -23,6 +23,9 @@ const noticeSlice = createSlice({
       })
       .addCase(expenseDeleted, (state) => {
         state.message = 'Expense was deleted.'
+      })
+      .addCase(memberRemoved, (state, action) => {
+        state.message = `${action.payload.name} was removed from the trip.`
       })
   },
 })
